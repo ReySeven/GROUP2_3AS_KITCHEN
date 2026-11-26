@@ -1,4 +1,5 @@
 import * as userModel  from '../models/userModel.js';
+import * as riderModel from '../models/riderModel.js';
 import validator from 'validator';
 import bcrypt    from 'bcryptjs';
 
@@ -55,6 +56,10 @@ export const createAccount = async (user) => {
 
 // login
 export const login = async (user) => {
+    if (!user.email || !user.password) {
+        throw new Error('Email and password are required.');
+    }
+
     const existing = await doesUserExist(user.email);
     if (!existing.result) {
         throw new Error('No account found with this email.');
@@ -67,5 +72,15 @@ export const login = async (user) => {
 
     const { id, name, email, role } = existing.user;
 
-    return { id, name, email, role };
+    // attach riderId for rider accounts
+    let riderId = null;
+    if (role === 'r') {
+        const rider = await riderModel.findRiderByUserId(id);
+        if (!rider.length || rider[0].status === 'Resigned') {
+            throw new Error('Your rider account has been deactivated. Please contact the admin.');
+        }
+        riderId = rider[0].id;
+    }
+
+    return { id, name, email, role, riderId };
 }

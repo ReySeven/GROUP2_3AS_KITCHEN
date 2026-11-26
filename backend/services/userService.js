@@ -1,5 +1,14 @@
 import * as userModel  from '../models/userModel.js';
+import validator from 'validator';
 import bcrypt    from 'bcryptjs';
+
+const doesUserExist = async (email) => {
+    const existing = await userModel.findUserByEmail(email);
+    if (existing.length > 0) {
+        return { result: true, user: existing[0] };
+    }
+    return { result: false, user: undefined };
+}
 
 // get all
 export const fetchAllUsers = async () => {
@@ -9,6 +18,23 @@ export const fetchAllUsers = async () => {
 
 // register
 export const createAccount = async (user) => {
+    if (!user.first_name || !user.last_name || !user.email || !user.password) {
+        throw new Error('First name, last name, email, and password are required.');
+    }
+
+    if (!validator.isEmail(user.email)) {
+        throw new Error('Enter a valid email address.');
+    }
+
+    if (user.password.length < 6) {
+        throw new Error('Password must be at least 6 characters.');
+    }
+
+    const existing = await doesUserExist(user.email);
+    if (existing.result) {
+        throw new Error('An account with this email already exists.');
+    }
+
     const salt           = bcrypt.genSaltSync(10);
     const hashedPassword = bcrypt.hashSync(user.password, salt);
 

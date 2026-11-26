@@ -10,6 +10,14 @@ export const fetch = async () => {
     return rows;
 }
 
+export const findUserByEmail = async (email) => {
+    const [rows] = await pool.query(
+        `SELECT *, ${fullName} AS name FROM users WHERE email = ?`,
+        [email]
+    );
+    return rows;
+}
+
 // insert
 export const insert = async (user) => {
     const [result] = await pool.query(

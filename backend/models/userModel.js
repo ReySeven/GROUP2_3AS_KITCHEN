@@ -1,0 +1,29 @@
+import pool from '../config/db.js';
+
+const fullName = `CONCAT(first_name, ' ', last_name)`;
+
+// read
+export const fetch = async () => {
+    const [rows] = await pool.query(
+        `SELECT id, first_name, last_name, ${fullName} AS name, email, role, created_at FROM users`
+    );
+    return rows;
+}
+
+// insert
+export const insert = async (user) => {
+    const [result] = await pool.query(
+        "INSERT INTO users (first_name, last_name, email, password, role) VALUES (?, ?, ?, ?, ?)",
+        [user.first_name, user.last_name, user.email, user.password, user.role || 'c']
+    );
+    return result.insertId;
+}
+
+// delete
+export const remove = async (id) => {
+    const [result] = await pool.query(
+        "DELETE FROM users WHERE id = ?",
+        [id]
+    );
+    return result.affectedRows;
+}

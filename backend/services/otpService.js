@@ -2,6 +2,10 @@ import crypto      from 'crypto';
 import nodemailer  from 'nodemailer';
 import * as otpModel from '../models/otpModel.js';
 
+// Rate-limit: track last-sent time in memory (per process)
+const lastSent = new Map();
+const RESEND_COOLDOWN_MS = 60_000; // 1 minute
+
 function makeTransporter() {
     return nodemailer.createTransport({
         service: 'gmail',
@@ -13,10 +17,18 @@ function makeTransporter() {
 }
 
 export const sendOtp = async (email) => {
+    // Rate-limit check
+    const last = lastSent.get(email);
+    if (last && Date.now() - last < RESEND_COOLDOWN_MS) {
+        const wait = Math.ceil((RESEND_COOLDOWN_MS - (Date.now() - last)) / 1000);
+        throw new Error(`Please wait ${wait} seconds before requesting another code.`);
+    }
+
     const code      = String(crypto.randomInt(100_000, 1_000_000));
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
 
     await otpModel.save(email, code, expiresAt);
+    lastSent.set(email, Date.now());
 
     const transporter = makeTransporter();
     await transporter.sendMail({

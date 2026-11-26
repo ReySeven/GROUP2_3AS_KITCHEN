@@ -22,3 +22,38 @@ export const createAccount = async (req, res) => {
         });
     }
 }
+
+export const login = async (req, res) => {
+    const { email, password } = req.body;
+    const user = { email, password };
+
+    try {
+        const result = await userService.login(user);
+
+        // save to session
+        req.session.user = {
+            id:      result.id,
+            name:    result.name,
+            email:   result.email,
+            role:    result.role,
+            riderId: result.riderId,
+        };
+
+        res.status(200).json({
+            success: true,
+            user:    req.session.user,
+        });
+    } catch(e) {
+        console.log(e);
+        res.status(500).json({
+            error: `${e.message || "Internal Server Error"}`
+        });
+    }
+}
+
+export const me = (req, res) => {
+    if (!req.session.user) {
+        return res.status(401).json({ error: 'Not authenticated.' });
+    }
+    res.status(200).json(req.session.user);
+}

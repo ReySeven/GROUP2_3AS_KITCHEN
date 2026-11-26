@@ -18,6 +18,14 @@ export const findUserByEmail = async (email) => {
     return rows;
 }
 
+export const findUserById = async (id) => {
+    const [rows] = await pool.query(
+        `SELECT id, first_name, last_name, ${fullName} AS name, email, role FROM users WHERE id = ?`,
+        [id]
+    );
+    return rows;
+}
+
 // insert
 export const insert = async (user) => {
     const [result] = await pool.query(
